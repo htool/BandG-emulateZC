@@ -1,5 +1,10 @@
 # Emulate ZC1/2
 
+## Usage
+
+To start the emulation e.g. on ID 19 use:
+$ DEBUG=emulate node emulate.js ZC2 19
+
 ## What works
  - On console you can use the following keys:
 
