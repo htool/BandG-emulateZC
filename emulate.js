@@ -27,17 +27,35 @@ var part = 0
 var displayAssigned = false;
 
 var commission_reply = {
-  'ffffff2f04800000ffff': '13,41,9f,fe,ff,ff,03,2f,04,80,02,08,00,00,00,00,00,00,00,00,ff',
-  'ffffff2f048001080216bb': '13,41,9f,fe,ff,ff,04,2f,04,80,02,08,02,16,bb,2f,00,82,f0,c0,ff',
-  'ffffff2f05800000ffff': '13,41,9f,fe,ff,ff,ff,2f,05,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',
-  'ffffff2f06800000ffff': '13,41,9f,fe,ff,ff,ff,2f,06,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',
   'ffffff2f07800000ffff': '13,41,9f,fe,ff,ff,ff,2f,07,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',
-  'ffffff2f048001089f1cbb': '13,41,9f,fe,ff,ff,04,2f,04,80,02,08,02,16,bb,2f,00,82,f0,c0,ff'
+  'ffffff2f04800000ffff': '13,41,9f,fe,ff,ff,03,2f,04,80,02,08,00,00,00,00,00,00,00,00,ff',
+  'ffffff2f4a000200ffff': '0e,41,9f,02,ff,ff,ff,2f,25,00,00,ff,ff,ff,ff,ff',
+
+  'ffffff2f06800000ffff': '13,41,9f,fe,ff,ff,ff,2f,06,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',
+  'ffffff2f05800000ffff': '13,41,9f,fe,ff,ff,ff,2f,05,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',
+  'ffffff2f13800000ffff': '13,41,9f,fe,ff,ff,ff,2f,05,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',  // trying
+  'ffffff2f14800000ffff': '13,41,9f,fe,ff,ff,ff,2f,05,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',  // trying
+  'ffffff2f090000ffffffff': '0e,41,9f,fe,ff,ff,ff,2f,4a,00,00,ff,ff,ff,ff,ff',
+
+  'ffffff2f048001080216bb': '13,41,9f,fe,ff,ff,04,2f,04,80,02,08,02,16,bb,2f,00,82,f0,c0,ff',
+  'ffffff2f048001089f1cbb': '13,41,9f,fe,ff,ff,04,2f,04,80,02,08,9f,1c,bb,2f,00,82,f0,c0,ff',
+  'ffffff2f078001080000': '13,41,9f,02,ff,ff,01,2f,07,80,02,08,00,00,00,00,00,00,00,00,ff'
 
 }
 
 function hex2bin(hex){
     return ("00000000" + (parseInt(hex, 16)).toString(2)).substr(-8);
+}
+
+async function send_button (key_button) {
+  msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, zc_key_code['press'], zc_key_code[key_button]);
+  // msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, hexByte(canbus.candevice.address), zc_key_code['press'], zc_key_code[key_button]);
+  debug('Sending button [%s] press pgn: %s', key_button, msg);
+  canbus.sendPGN(msg)
+  await sleep(25)
+  msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, zc_key_code['release'], zc_key_code[key_button]);
+  debug('Sending button [%s] release pgn: %s', key_button, msg);
+  canbus.sendPGN(msg)
 }
 
 switch (emulate) {
@@ -50,76 +68,63 @@ switch (emulate) {
 			process.stdin.on('keypress', (str, key) => {
 			  if (key.ctrl && key.name === 'c') {
 			    process.exit();
-			  } else if (key.name === 'n') {
-			    state_button = 'navigation'
-			  } else if (key.name === 'f') {
-			    ac12mode = 'followup'
-			  } else if (key.name === 'h') {
-			    state_button = 'headinghold'
-			  } else if (key.name === 'u') {
-			    // ac12mode = 'nonfollowup'
-			  } else if (key.name === 'w') {
-			    // ac12mode = 'wind'
-          state_button = 'wind'
-			  } else if (key.name === 'd') {
-			    state_button= 'nodrift'
-			  } else if (key.name === 'u') {
-			    key_button = '-10'
-			  } else if (key.name === 'i') {
-			    key_button = '-1'
-			  } else if (key.name === 'o') {
-			    key_button = '+1'
-			  } else if (key.name === 'p') {
-			    key_button = '+10'
-			  } else if (key.name === 'e') {
-			    // ac12state = 'engaged'
-          state_button = 'engage'
-			  } else if (key.name === 's') {
-			    // ac12state = 'standby'
-			    state_button = 'standby'
 			  } else if (key.name === 'return') {
-			    console.log('')
+			    key_button = 'knobpush'
+			  } else if (key.name === 'space') {
+			    key_button = 'knobpush'
+			  } else if (key.name === 'd') {
+			    key_button = 'display'
+			  } else if (key.name === 'pageup') {
+			    key_button = 'out'
+			  } else if (key.name === 'pagedown') {
+			    key_button = 'in'
+			  } else if (key.name === 'p') {
+			    key_button = 'power'
+			  } else if (key.name === 'm') {
+			    key_button = 'menu'
+			  } else if (key.name === 'up') {
+			    key_button = 'up'
+			  } else if (key.name === 'down') {
+			    key_button = 'down'
+			  } else if (key.name === 'left') {
+			    key_button = 'left'
+			  } else if (key.name === 'right') {
+			    key_button = 'right'
+			  } else if (key.name === 'escape') {
+			    key_button = 'pages'
+			  } else if (key.name === 'i') {
+			    key_button = 'info'
 			  } else if (key.name === '1') {
-          part = part + 3
+			    key_button = '1'
+			  } else if (key.name === '2') {
+			    key_button = '2'
+			  } else if (key.name === '3') {
+			    key_button = '3'
+			  } else if (key.name === '4') {
+			    key_button = '4'
+			  } else if (key.name === '5') {
+			    key_button = '5'
+			  } else if (key.name === '6') {
+			    key_button = '6'
+			  } else if (key.name === '7') {
+			    key_button = '7'
+			  } else if (key.name === '8') {
+			    key_button = '8'
+			  } else if (key.name === '9') {
+			    key_button = '9'
+			  } else if (key.name === '0') {
+			    key_button = '0'
 			  } else {
 		      debug('Key %s not mapped.\n', key.name)
 		    }
+		    if (typeof key_button != 'undefined') {
+          send_button(key_button)
+		    }
+		    delete key_button
 			});
 		}
-  break;
-  case 'OP10keypad':
-    console.log('OP10 keypad emulator\nButtons: a=auto s=standby m=mode u=-10 i=-1 o=+1 p=+10')
-	  const readline = require('readline');
-		readline.emitKeypressEvents(process.stdin);
-		process.stdin.setRawMode(true);
-		process.stdin.on('keypress', (str, key) => {
-		  if (key.ctrl && key.name === 'c') {
-			  process.exit();
-			} else if (key.name === 'a') {
-			    button='auto'
-			} else if (key.name === 's') {
-			    button='standby'
-			} else if (key.name === 'm') {
-			    button='mode'
-			} else if (key.name === 'u') {
-			    button='-1'
-			} else if (key.name === 'i') {
-			    button='+1'
-			} else if (key.name === 'o') {
-			    button='-10'
-			} else if (key.name === 'p') {
-			    button='+10'
-      } else {
-        debug('Key not mapped: %s', key.name);
-      }
-      if (typeof button != 'undefined') {
-        msg = util.format(op10msg, (new Date()).toISOString(), canbus.candevice.address, hexByte(canbus.candevice.address), op10_key_code[button]);
-        // debug('Sending pgn: %s', msg);
-        canbus.sendPGN(msg)
-      }
-      delete button
-    });
-  break;
+
+    break;
 }
 
 
@@ -131,16 +136,52 @@ var pgn130845 = [];
 var pgn130846 = [];
 var pgn130846_size;
 
-const op10_key_code = {
-    "+1":      "02,ff,ff,02,0d,00,04",
-    "+10":     "02,ff,ff,02,0d,00,05",
-    "-1":      "02,ff,ff,02,0d,00,ff",
-    "-10":     "02,ff,ff,0a,06,00,00",
-    "auto":    "02,ff,ff,0a,09,00,00",
-    "mode":    "02,ff,ff,0a,0f,00,00",
-    "standby": "02,ff,ff,0a,1c,00,00",
-    "-1-10":   "",
-    "+1+10":   ""
+// 2022-03-13-22:05:31.900,3,65332,0,255,8,41,9f,fe,84,0e,32,b3,57
+// 2022-03-13-22:05:31.900,3,65332,0,255,8,41,9f,fe,84,0e,32,33,57
+// 2022-03-13-22:05:31.901,3,65332,0,255,8,41,9f,fe,84,0e,32,b3,56
+// 2022-03-13-22:05:31.901,3,65332,0,255,8,41,9f,fe,84,0e,32,33,56
+
+const zcmsg = '%s,3,65332,%s,255,8,41,9f,fe,84,0e,32,%s,%s';
+const zc_key_code = {
+    'in':       '57',
+    'out':      '58',
+    'press':    'b3',
+    'release':  '33',
+    'display':  '07',
+    'stbyauto': '04',
+    'power':    '14',
+    'plot':     '1B',
+    'goto':     '0A',
+    'chart':    '1A',
+    'radar':    '1A',
+    'echo':     '15',
+    'nav':      '17',
+    'info':     '1C',
+    'pages':    '13',
+
+//knob right
+// can0 0CFF3400 [8] 41 9F FE 85 00 00 FF 08
+//know left
+// can0 0CFF3400 [8] 41 9F FE 85 00 00 01 08
+
+    'knobpush': '58',
+    'up':       '52',
+    'down':     '51',
+    'left':     '50',
+    'right':    '4F',
+    'menu':     '10',
+    'win':      '06',
+    '1':        '1E',
+    '2':        '1F',
+    '3':        '20',
+    '4':        '21',
+    '5':        '22',
+    '6':        '23',
+    '7':        '24',
+    '8':        '25',
+    '9':        '26',
+    '0':        '27'
+
 }
 
 debug('Using device id: %i', canbus.candevice.address)
@@ -216,12 +257,18 @@ async function boot130845 () {
   }
 }
 
-function ZC2_displayRequest () {
+function ZC2_displayRequest() {
   if (!displayAssigned) {
     const message = "%s,3,65332,%s,255,8,41,9f,fe,84,0e,32,b3,07"
     var msg = util.format(message, (new Date()).toISOString(), canbus.candevice.address)
-    debug('Sending display request packet: %s', msg);
+    debug('Sending display BUTTON DOWN packet: %s', msg);
     canbus.sendPGN(msg)
+  } else {
+    const message = "%s,3,65332,%s,255,8,41,9f,fe,84,0e,32,33,07"
+    var msg = util.format(message, (new Date()).toISOString(), canbus.candevice.address)
+    debug('Sending display BUTTON UP packet: %s', msg);
+    canbus.sendPGN(msg)
+    clearInterval(ZC2_displayRequestID);
   }
 }
 
@@ -261,7 +308,7 @@ switch (emulate) {
       break;
 	case 'ZC2':
 	    debug('Emulate: B&G ZC2 remote')
-      setInterval(ZC2_displayRequest, 1000)
+      var ZC2_displayRequestID = setInterval(ZC2_displayRequest, 1000)
       // setTimeout(boot130845, 3000)  // Once at startup
       setInterval(heartbeat, 60000) // Heart beat PGN
  	    break;
