@@ -1,6 +1,6 @@
 {
   "name": "bandg-emulateZC",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Emulate ZC1/2",
   "main": "emulate.js",
   "directories": {

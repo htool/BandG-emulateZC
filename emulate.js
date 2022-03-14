@@ -23,8 +23,9 @@ const canDevice = require('./canboatjs/lib/canbus').canDevice
 const canbus = new (require('./canboatjs').canbus)({})
 const util = require('util')
 
+var mfdAddress = "";
 var part = 0
-var displayAssigned = false;
+var displayAssigned = true;
 
 var commission_reply = {
   'ffffff2f07800000ffff': '13,41,9f,fe,ff,ff,ff,2f,07,80,02,08,0e,32,33,e8,00,82,f0,c0,ff',
@@ -47,13 +48,14 @@ function hex2bin(hex){
     return ("00000000" + (parseInt(hex, 16)).toString(2)).substr(-8);
 }
 
+const zcmsg = '%s,3,65332,%s,255,8,41,9f,%s,84,0e,32,%s,%s';
+
 async function send_button (key_button) {
-  msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, zc_key_code['press'], zc_key_code[key_button]);
+  msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, mfdAddress, zc_key_code['press'], zc_key_code[key_button]);
   // msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, hexByte(canbus.candevice.address), zc_key_code['press'], zc_key_code[key_button]);
   debug('Sending button [%s] press pgn: %s', key_button, msg);
   canbus.sendPGN(msg)
-  await sleep(25)
-  msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, zc_key_code['release'], zc_key_code[key_button]);
+  msg = util.format(zcmsg, (new Date()).toISOString(), canbus.candevice.address, mfdAddress, zc_key_code['release'], zc_key_code[key_button]);
   debug('Sending button [%s] release pgn: %s', key_button, msg);
   canbus.sendPGN(msg)
 }
@@ -72,14 +74,22 @@ switch (emulate) {
 			    key_button = 'knobpush'
 			  } else if (key.name === 'space') {
 			    key_button = 'knobpush'
+			  } else if (key.name === 'n') {
+			    key_button = 'nav'
 			  } else if (key.name === 'd') {
 			    key_button = 'display'
+			  } else if (key.sequence === 'M') {
+			    key_button = 'mob'
+			  } else if (key.name === 's') {
+			    key_button = 'stbyauto'
 			  } else if (key.name === 'pageup') {
 			    key_button = 'out'
 			  } else if (key.name === 'pagedown') {
 			    key_button = 'in'
 			  } else if (key.name === 'p') {
 			    key_button = 'power'
+			  } else if (key.name === 'c') {
+			    key_button = 'chart'
 			  } else if (key.name === 'm') {
 			    key_button = 'menu'
 			  } else if (key.name === 'up') {
@@ -129,22 +139,15 @@ switch (emulate) {
 
 
 // Variables for multipacket pgns
-var pgn130850 = [];
-var pilotmode126720 = [];
-var pgn129284 = [];
 var pgn130845 = [];
 var pgn130846 = [];
 var pgn130846_size;
 
-// 2022-03-13-22:05:31.900,3,65332,0,255,8,41,9f,fe,84,0e,32,b3,57
-// 2022-03-13-22:05:31.900,3,65332,0,255,8,41,9f,fe,84,0e,32,33,57
-// 2022-03-13-22:05:31.901,3,65332,0,255,8,41,9f,fe,84,0e,32,b3,56
-// 2022-03-13-22:05:31.901,3,65332,0,255,8,41,9f,fe,84,0e,32,33,56
 
-const zcmsg = '%s,3,65332,%s,255,8,41,9f,fe,84,0e,32,%s,%s';
 const zc_key_code = {
+    'mob':      '1D',
     'in':       '57',
-    'out':      '58',
+    'out':      '56',
     'press':    'b3',
     'release':  '33',
     'display':  '07',
@@ -225,36 +228,17 @@ function heartbeat () {
   canbus.sendPGN(msg)
 }
 
-async function PGN130822 () {
-  const messages = [
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0e,00,00,fc,13,25,00,00,74,be",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0f,00,00,fc,13,60,04,00,a3,5c",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,09,00,00,fc,12,1c,00,00,dd,d1",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0a,00,00,fc,13,b6,00,00,94,3a",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0b,00,00,fc,13,b9,00,00,16,67",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0c,00,00,fc,13,6f,00,00,03,bb",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0d,00,00,fc,13,25,00,00,74,be",
-    "%s,3,130822,%s,255,0f,13,99,ff,01,00,0e,00,00,fc,13,25,00,00,74,be" ]
-  for (var nr in messages) {
-    msg = util.format(messages[nr], (new Date()).toISOString(), canbus.candevice.address)
-    canbus.sendPGN(msg)
-    await sleep(1000)
-  }
-}
 
-async function boot130845 () {
-  const messages = [
-    "%s,3,130845,%s,255,0e,41,9f,fe,ff,ff,ff,2f,4a,00,00,ff,ff,ff,ff",
-    "%s,3,130845,%s,255,0e,41,9f,02,ff,ff,ff,2f,4a,00,00,ff,ff,ff,ff",
-    "%s,3,130845,%s,255,0e,41,9f,02,ff,ff,ff,2f,12,00,00,ff,ff,ff,ff",
-    "%s,3,130845,%s,255,0e,41,9f,02,ff,ff,ff,2f,25,00,00,ff,ff,ff,ff"
-  ]
-  for (var nr in messages) {
-    var msg = util.format(messages[nr], (new Date()).toISOString(), canbus.candevice.address)
+async function announceZC () {
+  msgs = [
+    "%s,3,130845,%s,255,0e,41,9f,fe,ff,ff,ff,2f,4a,00,00,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff",
+    "%s,3,130845,%s,255,0e,41,9f,01,ff,ff,ff,2f,4a,00,00,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff",
+    "%s,3,130845,%s,255,0e,41,9f,01,ff,ff,ff,2f,12,00,00,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff",
+    "%s,3,130845,%s,255,0e,41,9f,01,ff,ff,ff,2f,25,00,00,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff" ]
+  msgs.forEach(value => {
+    var msg = util.format(value , (new Date()).toISOString(), canbus.candevice.address)
     canbus.sendPGN(msg)
-    debug('Sending boot packet: %s', msg);
-    await sleep(100)
-  }
+  });
 }
 
 function ZC2_displayRequest() {
@@ -272,44 +256,10 @@ function ZC2_displayRequest() {
   }
 }
 
-function ZC2_PGN130860 () {
-  const message = "%s,7,130860,%s,255,21,13,99,ff,ff,ff,ff,7f,ff,ff,ff,7f,ff,ff,ff,ff,ff,ff,ff,7f,ff,ff,ff,7f"
-  var msg = util.format(message, (new Date()).toISOString(), canbus.candevice.address)
-  canbus.sendPGN(msg)
-}
-
-function ZC2_PGN130850 () {
-  const message = "%s,2,130850,%s,255,0c,41,9f,ff,ff,64,00,2b,00,ff,ff,ff,ff,ff"
-  var msg = util.format(message, (new Date()).toISOString(), canbus.candevice.address)
-  canbus.sendPGN(msg)
-}
-
-
-async function OP10_PGN65305 () {
-  const messages = [
-    "%s,7,65305,%s,255,8,41,9f,01,0b,00,00,00,00",
-    "%s,7,65305,%s,255,8,41,9f,01,03,04,00,00,00" ]
-  for (var nr in messages) {
-    msg = util.format(messages[nr], (new Date()).toISOString(), canbus.candevice.address)
-    canbus.sendPGN(msg)
-    await sleep(25)
-  }
-}
-
-
 switch (emulate) {
-  case 'default':
-      setTimeout(PGN130822, 5000) // Once at startup
-  case 'OP10keypad':
-      debug('Emulate: B&G OP10 Keypad')
-      setInterval(PGN130822, 300000) // Every 5 minutes
-      setInterval(OP10_PGN65305, 1000) // unsure
-      setInterval(heartbeat, 60000) // Heart beat PGN
-      break;
 	case 'ZC2':
 	    debug('Emulate: B&G ZC2 remote')
       var ZC2_displayRequestID = setInterval(ZC2_displayRequest, 1000)
-      // setTimeout(boot130845, 3000)  // Once at startup
       setInterval(heartbeat, 60000) // Heart beat PGN
  	    break;
 }
@@ -330,36 +280,16 @@ function mainLoop () {
         canbus.candevice.n2kMessage(msg.pgn);
       }
       switch (emulate) {
-        case 'op10keypad':
-          
-          break;
         case 'ZC2':
-          if (msg.pgn.pgn == 130846) { // Commission Simnet reply
-            pgn130846 = pgn130846.concat(buf2hex(msg.data).slice(1)); // Skip multipart byte
-            PGN130846 = pgn130846.join(',');
-            if (!PGN130846.match(/^..,41,9f/)) {
-              debug('PGN130846 not ok: %s', PGN130846);
-              pgn130846 = [];
-            } else {
-              pgn130846_size = parseInt(pgn130846[0], 16);
-            }
-            if (pgn130846.length >= pgn130846_size) { // We have required length
-              debug('PGN130846 [%d]: %s', msg.pgn.src, PGN130846);
-              var PGN130846_key = PGN130846.replace(/,/g,'').substring(8,30);
-              var PGN130846_reply = commission_reply[PGN130846_key];
-              if (typeof PGN130846_reply != 'undefined') {
-                PGN130846_reply = "%s,3,130846,%s,255," + PGN130846_reply;
-                PGN130846_reply = util.format(PGN130846_reply, (new Date()).toISOString(), canbus.candevice.address)
-                debug('PGN130846 reply: %s', PGN130846_reply)
-                canbus.sendPGN(PGN130846_reply)
-              } else {
-                debug('PGN130846_key missing: %s', PGN130846_key);
-              }
-              pgn130846 = [];
+          if (msg.pgn.pgn == 65280 && mfdAddress == "") { // Find MFD
+            if (buf2hex(msg.data).join(',') == "13,99,04,05,00,00,02,00") {
+              mfdAddress = hexByte(msg.pgn.src);
+              debug('Found MFD at id %s', mfdAddress);
+              announceZC();
             }
           }
           
-          if (msg.pgn.pgn == 130845) { // Commission Simnet reply
+          if (msg.pgn.pgn == 130845 && displayAssigned == false) { // Commission Simnet reply
             pgn130845 = pgn130845.concat(buf2hex(msg.data).slice(1)); // Skip multipart byte
             PGN130845 = pgn130845.join(',');
             if (!PGN130845.match(/^0e,41,9f/)) {

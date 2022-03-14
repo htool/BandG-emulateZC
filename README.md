@@ -32,7 +32,9 @@ i
 0
 
 # Status
-Stuck at display assignment. Remote keys work. Assignment shows display leter. Not sure what's missing here.
+Assignment is skipped and assumed. Keys are working for me (MFD = 01, ZC = 19).
+MOB key for some reasons doesn't work.
+
 
 captures/ candump captures
 captures/reg-[ABCD] are captures of display registration
